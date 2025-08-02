@@ -1,14 +1,77 @@
 'use client';
 
 import React, { useState } from 'react';
+import { supabase } from '../../lib/supabase';
 
 export default function WaitlistPage() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+  const [lastSubmission, setLastSubmission] = useState<number>(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    const fetchWaitlistCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('waitlist')
+          .select('*', { count: 'exact', head: true });
+
+        if (!error && count !== null) {
+          setWaitlistCount(count);
+        }
+      } catch (err) {
+        console.error('Error fetching waitlist count:', err);
+      }
+    };
+
+    fetchWaitlistCount();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    
+    const now = Date.now();
+    const timeSinceLastSubmission = now - lastSubmission;
+    
+    if (timeSinceLastSubmission < 5000) {
+      setError('Please wait 5 seconds between submissions.');
+      return;
+    }
+    
+    if (!email.trim()) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError('');
+    setLastSubmission(now);
+
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Something went wrong. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      setWaitlistCount(prev => prev !== null ? prev + 1 : 1);
+      setIsSubmitted(true);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   const stars = Array.from({ length: 200 }, (_, i) => {
@@ -20,21 +83,20 @@ export default function WaitlistPage() {
     const twinkleSpeed = Math.sin(seed + 4);
     const distance = Math.sin(seed + 5);
     
-    // Different star types based on size and brightness
     let starClass = '';
     let animationClass = '';
     
     if (size > 0.9) {
-      starClass = 'w-2 h-2 bg-yellow-300/90'; // Bright stars
+      starClass = 'w-2 h-2 bg-yellow-300/90';
       animationClass = 'animate-twinkle';
     } else if (size > 0.7) {
-      starClass = 'w-1.5 h-1.5 bg-white/80'; // Medium stars
+      starClass = 'w-1.5 h-1.5 bg-white/80';
       animationClass = 'animate-twinkle-slow';
     } else if (size > 0.5) {
-      starClass = 'w-1 h-1 bg-blue-200/70'; // Blue stars
+      starClass = 'w-1 h-1 bg-blue-200/70';
       animationClass = 'animate-twinkle-fast';
     } else {
-      starClass = 'w-0.5 h-0.5 bg-white/50'; // Dim stars
+      starClass = 'w-0.5 h-0.5 bg-white/50';
       animationClass = 'animate-twinkle';
     }
     
@@ -104,22 +166,38 @@ export default function WaitlistPage() {
 
           <div className="w-full max-w-lg mx-auto animate-fade-in-up-delay-2">
             {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  required
-                  className="flex-1 px-4 md:px-6 py-3 md:py-4 bg-black/60 border border-white/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/50 transition-all duration-300 text-base"
-                />
-                <button
-                  type="submit"
-                  className="px-6 md:px-8 py-3 md:py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:scale-105 active:scale-95 text-base"
-                >
-                  Join Waitlist
-                </button>
-              </form>
+              <div>
+                <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    disabled={isLoading}
+                    className="flex-1 px-4 md:px-6 py-3 md:py-4 bg-black/60 border border-white/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/50 transition-all duration-300 text-base disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-6 md:px-8 py-3 md:py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:scale-105 active:scale-95 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Joining...' : 'Join Waitlist'}
+                  </button>
+                </form>
+                {error && (
+                  <div className="mt-4 text-center">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+                {waitlistCount !== null && (
+                  <div className="mt-6 text-center">
+                    <p className="text-gray-400 text-sm">
+                      {waitlistCount} amazing people waiting
+                    </p>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-center animate-fade-in-scale">
                 <div className="text-green-400 text-4xl mb-6">✓</div>
