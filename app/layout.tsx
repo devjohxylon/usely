@@ -13,14 +13,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://usely.ai'),
+  metadataBase: new URL('https://usely.dev'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Usely - AI Usage Metering & Billing Platform',
     description: 'Meter, analyze and bill your AI usage — instantly. Unify token tracking and usage-based billing for any LLM provider.',
-    url: 'https://usely.ai',
+    url: 'https://usely.dev',
     siteName: 'Usely',
     images: [
       {
@@ -81,7 +81,7 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               "name": "Usely",
               "description": "AI usage metering and billing platform for LLM providers",
-              "url": "https://usely.ai",
+              "url": "https://usely.dev",
               "applicationCategory": "DeveloperApplication",
               "operatingSystem": "Web",
               "offers": {

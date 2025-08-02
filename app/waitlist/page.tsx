@@ -81,8 +81,8 @@ export default function WaitlistPage() {
         <div className="w-[800px] h-[500px] bg-gradient-to-r from-blue-400/15 via-cyan-400/10 to-blue-500/15 rounded-full blur-2xl animate-float-slow opacity-80 scale-110"></div>
       </div>
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
-        <div className="bg-black/20 rounded-3xl p-8 md:p-12 max-w-4xl w-full shadow-2xl transform hover:scale-105 transition-all duration-500 animate-fade-in" style={{boxShadow: '0 0 30px rgba(102, 126, 234, 0.3), 0 0 60px rgba(102, 126, 234, 0.1)'}}>
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 md:px-6">
+        <div className="bg-black/20 rounded-3xl p-6 md:p-8 lg:p-12 max-w-4xl w-full shadow-2xl transform hover:scale-105 transition-all duration-500 animate-fade-in" style={{boxShadow: '0 0 30px rgba(102, 126, 234, 0.3), 0 0 60px rgba(102, 126, 234, 0.1)'}}>
           <div className="mb-12 animate-fade-in-up">
             <div className="inline-flex items-center px-6 py-3 bg-black/60 border border-white/30 rounded-full text-white/90 text-sm">
               Usely Waitlist
@@ -90,32 +90,32 @@ export default function WaitlistPage() {
           </div>
 
           <div className="text-center mb-16 max-w-3xl mx-auto animate-fade-in-up-delay">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-7xl font-bold text-white mb-6 md:mb-8 leading-tight">
               Track your users.{' '}
               <span className="italic font-light bg-gradient-to-r from-purple-400 via-blue-400 to-purple-500 bg-clip-text text-transparent animate-pulse">
                 Save your margins.
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl lg:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
               Usely lets you monitor and control customer AI usage before it gets out of hand.
             </p>
           </div>
 
           <div className="w-full max-w-lg mx-auto animate-fade-in-up-delay-2">
             {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="flex gap-4">
+              <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="flex-1 px-6 py-4 bg-black/60 border border-white/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/50 transition-all duration-300"
+                  className="flex-1 px-4 md:px-6 py-3 md:py-4 bg-black/60 border border-white/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/50 transition-all duration-300 text-base"
                 />
                 <button
                   type="submit"
-                  className="px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:scale-105 active:scale-95"
+                  className="px-6 md:px-8 py-3 md:py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:scale-105 active:scale-95 text-base"
                 >
                   Join Waitlist
                 </button>
