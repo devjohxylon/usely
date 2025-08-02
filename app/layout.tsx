@@ -1,5 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/react'
+import AnalyticsTracker from '../components/AnalyticsTracker'
 
 export const metadata: Metadata = {
   title: 'Usely - AI Usage Metering & Billing Platform',
@@ -95,6 +97,8 @@ export default function RootLayout({
       </head>
       <body className="antialiased text-white">
         {children}
+        <Analytics />
+        <AnalyticsTracker />
       </body>
     </html>
   )

@@ -1,31 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../lib/supabase';
 
-// Simple in-memory rate limiting (for production, use Redis)
-const rateLimitMap = new Map<string, number[]>();
+const MAX_REQUESTS_PER_MINUTE = 3;
 
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 3; // 3 requests per minute per IP
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW;
-  
-  if (!rateLimitMap.has(ip)) {
-    rateLimitMap.set(ip, [now]);
+async function checkRateLimit(ip: string): Promise<boolean> {
+  try {
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    
+    const { count, error } = await supabase
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('ip_address', ip)
+      .eq('endpoint', 'waitlist')
+      .gte('window_start', oneMinuteAgo);
+    
+    if (error) {
+      return false;
+    }
+    
+    return (count || 0) >= MAX_REQUESTS_PER_MINUTE;
+  } catch (error) {
     return false;
   }
-  
-  const requests = rateLimitMap.get(ip)!;
-  const recentRequests = requests.filter(time => time > windowStart);
-  
-  if (recentRequests.length >= MAX_REQUESTS_PER_WINDOW) {
-    return true;
+}
+
+async function recordRequest(ip: string): Promise<void> {
+  try {
+    await supabase
+      .from('rate_limits')
+      .insert([
+        {
+          ip_address: ip,
+          endpoint: 'waitlist',
+          request_count: 1,
+          window_start: new Date().toISOString()
+        }
+      ]);
+  } catch (error) {
+    // Silent fail for rate limiting
   }
-  
-  recentRequests.push(now);
-  rateLimitMap.set(ip, recentRequests);
-  return false;
 }
 
 function isValidEmail(email: string): boolean {
@@ -37,12 +50,15 @@ export async function POST(request: NextRequest) {
   try {
     const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
     
-    if (isRateLimited(ip)) {
+    const isLimited = await checkRateLimit(ip);
+    if (isLimited) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429 }
       );
     }
+    
+    await recordRequest(ip);
     
     const { email } = await request.json();
     
