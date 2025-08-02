@@ -3001,6 +3001,10 @@ body {
   --tw-gradient-to: #9333ea var(--tw-gradient-to-position);
 }
 
+.hover\:to-cyan-600:hover{
+  --tw-gradient-to: #0891b2 var(--tw-gradient-to-position);
+}
+
 .hover\:text-\[\#0a0a0a\]:hover{
   --tw-text-opacity: 1;
   color: rgb(10 10 10 / var(--tw-text-opacity, 1));
@@ -3436,6 +3440,9 @@ body {
   }
   .lg\:grid-cols-6{
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .lg\:grid-cols-3{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .lg\:flex-row{
     flex-direction: row;
