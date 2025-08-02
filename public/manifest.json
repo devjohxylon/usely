@@ -1,0 +1,27 @@
+{
+  "name": "Usely - AI Usage Metering & Billing Platform",
+  "short_name": "Usely",
+  "description": "Meter, analyze and bill your AI usage — instantly. Unify token tracking and usage-based billing for any LLM provider.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/uselylogobg.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/uselylogobg.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "developer"],
+  "lang": "en",
+  "dir": "ltr"
+} 
