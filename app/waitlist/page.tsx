@@ -13,38 +13,62 @@ export default function WaitlistPage() {
   const [lastSubmission, setLastSubmission] = useState<number>(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  React.useEffect(() => {
-    const fetchWaitlistCount = async () => {
-      try {
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 3000)
-        );
-        
-        const countPromise = supabase
-          .from('waitlist')
-          .select('*', { count: 'exact', head: true });
+  // Memoized fetch function to prevent unnecessary re-renders
+  const fetchWaitlistCount = React.useCallback(async () => {
+    try {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 3000)
+      );
+      
+      const countPromise = supabase
+        .from('waitlist')
+        .select('*', { count: 'exact', head: true });
 
-        const { count, error } = await Promise.race([countPromise, timeoutPromise]) as any;
+      const { count, error } = await Promise.race([countPromise, timeoutPromise]) as any;
 
-        if (!error && count !== null) {
-          setWaitlistCount(count);
-        }
-      } catch (err) {
-        // Set a fallback count if the query fails or times out
-        setWaitlistCount(0);
-      } finally {
-        setIsCountLoading(false);
+      if (!error && count !== null) {
+        setWaitlistCount(count);
       }
-    };
+    } catch (err) {
+      // Set a fallback count if the query fails or times out
+      setWaitlistCount(0);
+    } finally {
+      setIsCountLoading(false);
+    }
+  }, []);
 
-    fetchWaitlistCount();
-
-    // Check if this IP has already submitted
+  // Memoized submission check to prevent unnecessary re-renders
+  const checkPreviousSubmission = React.useCallback(() => {
+    // Try localStorage first
     const hasSubmittedBefore = localStorage.getItem('usely_ip_submitted');
     if (hasSubmittedBefore) {
       setHasSubmitted(true);
+      return;
+    }
+
+    // Try sessionStorage as fallback
+    const sessionSubmitted = sessionStorage.getItem('usely_session_submitted');
+    if (sessionSubmitted) {
+      setHasSubmitted(true);
+      return;
+    }
+
+    // Check if we have a submission timestamp
+    const lastSubmitTime = localStorage.getItem('usely_last_submit_time');
+    if (lastSubmitTime) {
+      const timeDiff = Date.now() - parseInt(lastSubmitTime);
+      // If less than 24 hours ago, consider it submitted
+      if (timeDiff < 24 * 60 * 60 * 1000) {
+        setHasSubmitted(true);
+        return;
+      }
     }
   }, []);
+
+  React.useEffect(() => {
+    fetchWaitlistCount();
+    checkPreviousSubmission();
+  }, [fetchWaitlistCount, checkPreviousSubmission]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,14 +109,22 @@ export default function WaitlistPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Something went wrong. Please try again.');
+        if (response.status === 429) {
+          // Server detected duplicate IP
+          setHasSubmitted(true);
+          setError('You can only submit one email, I know you\'re excited!');
+        } else {
+          setError(data.error || 'Something went wrong. Please try again.');
+        }
         setIsLoading(false);
         return;
       }
 
-      // Mark this IP as having submitted
+      // Mark this device as having submitted (multiple storage methods for mobile)
       setHasSubmitted(true);
       localStorage.setItem('usely_ip_submitted', 'true');
+      sessionStorage.setItem('usely_session_submitted', 'true');
+      localStorage.setItem('usely_last_submit_time', Date.now().toString());
       
       setWaitlistCount(prev => prev !== null ? prev + 1 : 1);
       setIsSubmitted(true);

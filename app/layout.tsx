@@ -1,7 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Analytics } from '@vercel/analytics/react'
-import AnalyticsTracker from '../components/AnalyticsTracker'
+import { UserProvider } from '../contexts/UserContext'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'Usely - AI Usage Metering & Billing Platform',
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://usely.dev'),
+  metadataBase: new URL('https://usely.ai'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Usely - AI Usage Metering & Billing Platform',
     description: 'Meter, analyze and bill your AI usage — instantly. Unify token tracking and usage-based billing for any LLM provider.',
-    url: 'https://usely.dev',
+    url: 'https://usely.ai',
     siteName: 'Usely',
     images: [
       {
@@ -72,10 +72,15 @@ export default function RootLayout({
         <link rel="icon" href="/uselylogobg.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="preload" href="/uselylogobg.png" as="image" />
         
+        {/* Preconnect to external domains for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         
+        {/* Structured data for SEO */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -83,37 +88,25 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
               "name": "Usely",
-              "description": "AI usage metering and billing platform for LLM providers like OpenAI, Anthropic, and Mistral. Track tokens, analyze usage, and implement usage-based billing.",
-              "url": "https://usely.dev",
+              "description": "AI usage metering and billing platform for LLM providers",
+              "url": "https://usely.ai",
               "applicationCategory": "DeveloperApplication",
               "operatingSystem": "Web",
               "offers": {
                 "@type": "Offer",
                 "price": "0",
-                "priceCurrency": "USD",
-                "availability": "https://schema.org/InStock"
-              },
-              "provider": {
-                "@type": "Organization",
-                "name": "Usely",
-                "url": "https://usely.dev"
-              },
-              "featureList": [
-                "AI usage metering",
-                "Token tracking",
-                "Usage-based billing",
-                "LLM provider integration",
-                "Real-time analytics",
-                "Cost control"
-              ]
+                "priceCurrency": "USD"
+              }
             })
           }}
         />
       </head>
       <body className="antialiased text-white">
-        {children}
-        <Analytics />
-        <AnalyticsTracker />
+        <ErrorBoundary>
+          <UserProvider>
+            {children}
+          </UserProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

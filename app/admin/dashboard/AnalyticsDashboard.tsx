@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '../../../lib/supabase-client';
 import { User } from '@supabase/supabase-js';
 
@@ -29,6 +29,27 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
   const [activeUsers, setActiveUsers] = useState(0);
   const supabase = createClient();
 
+  // Memoized fetch function to prevent unnecessary re-renders
+  const fetchAnalyticsData = React.useCallback(async () => {
+    try {
+      const { data: waitlistData, error: waitlistError } = await supabase
+        .from('waitlist')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (waitlistError) {
+        return;
+      }
+
+      setWaitlist(waitlistData || []);
+      calculateAnalytics(waitlistData || []);
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     fetchAnalyticsData();
     
@@ -36,26 +57,7 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
     const interval = setInterval(fetchAnalyticsData, 10000);
     
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const recordAdminActivity = async () => {
-      try {
-        await fetch('/api/analytics/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            type: 'admin_dashboard_view',
-            timestamp: new Date().toISOString()
-          })
-        });
-      } catch (error) {
-        // Silent fail for analytics
-      }
-    };
-
-    recordAdminActivity();
-  }, []);
+  }, [fetchAnalyticsData]);
 
   // Real-time updates - check for new data every 5 seconds
   useEffect(() => {
@@ -83,27 +85,7 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
 
     const updateInterval = setInterval(checkForUpdates, 5000);
     return () => clearInterval(updateInterval);
-  }, [waitlist]);
-
-  const fetchAnalyticsData = async () => {
-    try {
-      const { data: waitlistData, error: waitlistError } = await supabase
-        .from('waitlist')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (waitlistError) {
-        return;
-      }
-
-      setWaitlist(waitlistData || []);
-      calculateAnalytics(waitlistData || []);
-    } catch (error) {
-      // Silent fail
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [waitlist, fetchAnalyticsData]);
 
   const calculateAnalytics = (data: WaitlistEntry[]) => {
     const now = new Date();
@@ -299,9 +281,6 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
                       Join Date
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      Time
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -314,9 +293,6 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                         {new Date(entry.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {new Date(entry.created_at).toLocaleTimeString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button

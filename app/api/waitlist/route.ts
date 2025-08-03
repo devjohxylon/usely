@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../lib/supabase';
 
+async function checkRateLimit(ip: string): Promise<boolean> {
+  try {
+    const { count, error } = await supabase
+      .from('waitlist')
+      .select('*', { count: 'exact', head: true })
+      .eq('ip_address', ip);
+    
+    if (error) {
+      return false;
+    }
+    
+    return (count || 0) >= 1;
+  } catch (error) {
+    return false;
+  }
+}
+
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -8,6 +25,16 @@ function isValidEmail(email: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    
+    const isLimited = await checkRateLimit(ip);
+    if (isLimited) {
+      return NextResponse.json(
+        { error: 'You can only submit one email, I know you\'re excited!' },
+        { status: 429 }
+      );
+    }
+    
     const { email } = await request.json();
     
     if (!email || !isValidEmail(email)) {
@@ -22,6 +49,7 @@ export async function POST(request: NextRequest) {
       .insert([
         { 
           email: email.trim().toLowerCase(),
+          ip_address: ip,
           created_at: new Date().toISOString()
         }
       ]);

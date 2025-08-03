@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import Navbar from '../components/Navbar';
-import HeroSection from '../components/HeroSection';
-import FeaturesSection from '../components/FeaturesSection';
-import CTASection from '../components/CTASection';
-import Footer from '../components/Footer';
-import AuthModal from '../components/AuthModal';
+import Navbar from '../../components/Navbar';
+import ProvidersSection from '../../components/ProvidersSection';
+import OrchestrationSection from '../../components/OrchestrationSection';
+import IntegrationSection from '../../components/IntegrationSection';
+import FeaturesSection from '../../components/FeaturesSection';
+import Footer from '../../components/Footer';
+import AuthModal from '../../components/AuthModal';
 
-export default function HomePage() {
+export default function FeaturesPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
@@ -29,12 +30,14 @@ export default function HomePage() {
         authMode={authMode}
         setAuthMode={setAuthMode}
       />
-      <HeroSection onLoginClick={openLoginModal} />
-      <FeaturesSection />
-      <CTASection onLoginClick={openLoginModal} />
+      <div className="pt-20">
+        <ProvidersSection />
+        <OrchestrationSection />
+        <IntegrationSection />
+        <FeaturesSection />
+      </div>
       <Footer />
       
-      {/* Shared Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={closeAuthModal}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-export default function AnalyticsTracker() {
+const AnalyticsTracker = React.memo(function AnalyticsTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
@@ -37,4 +37,6 @@ export default function AnalyticsTracker() {
   }, [pathname]);
 
   return null; // This component doesn't render anything
-} 
+});
+
+export default AnalyticsTracker; 
