@@ -31,7 +31,10 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
 
   useEffect(() => {
     fetchAnalyticsData();
-    const interval = setInterval(fetchAnalyticsData, 30000);
+    
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(fetchAnalyticsData, 10000);
+    
     return () => clearInterval(interval);
   }, []);
 
@@ -52,27 +55,34 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
     };
 
     recordAdminActivity();
+  }, []);
 
-    const updateActiveUsers = async () => {
+  // Real-time updates - check for new data every 5 seconds
+  useEffect(() => {
+    const checkForUpdates = async () => {
       try {
-        const response = await fetch('/api/analytics/active-users');
-        if (response.ok) {
-          const data = await response.json();
-          setActiveUsers(data.activeUsers || 0);
+        const { data: latestData, error } = await supabase
+          .from('waitlist')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!error && latestData && latestData.length > 0) {
+          const latestEntry = latestData[0];
+          const currentLatest = waitlist[0];
+          
+          // If we have new data, refresh everything
+          if (!currentLatest || latestEntry.id !== currentLatest.id) {
+            fetchAnalyticsData();
+          }
         }
       } catch (error) {
-        const recentActivity = waitlist.filter(entry => {
-          const joinTime = new Date(entry.created_at);
-          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-          return joinTime > fiveMinutesAgo;
-        }).length;
-        setActiveUsers(Math.max(recentActivity, 1));
+        // Silent fail
       }
     };
 
-    updateActiveUsers();
-    const interval = setInterval(updateActiveUsers, 10000);
-    return () => clearInterval(interval);
+    const updateInterval = setInterval(checkForUpdates, 5000);
+    return () => clearInterval(updateInterval);
   }, [waitlist]);
 
   const fetchAnalyticsData = async () => {
@@ -99,22 +109,26 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
     const todayWaitlist = data.filter(entry => new Date(entry.created_at) >= today).length;
     const weekWaitlist = data.filter(entry => new Date(entry.created_at) >= weekAgo).length;
+    const recentActivity = data.filter(entry => new Date(entry.created_at) >= fiveMinutesAgo).length;
     
     const totalWaitlist = data.length;
     const growthRate = weekWaitlist > 0 ? Math.round(((todayWaitlist / weekWaitlist) * 100)) : 0;
+    const estimatedActiveUsers = Math.max(recentActivity, 1);
 
     const analyticsData: AnalyticsData = {
       totalWaitlist: data.length,
       todayWaitlist,
       weekWaitlist,
       growthRate,
-      activeUsers
+      activeUsers: estimatedActiveUsers
     };
 
     setAnalytics(analyticsData);
+    setActiveUsers(estimatedActiveUsers);
   };
 
   const handleLogout = async () => {
@@ -123,13 +137,12 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
   };
 
   const exportCSV = () => {
-    const headers = ['Email', 'Join Date', 'Time'];
+    const headers = ['Email', 'Join Date'];
     const csvContent = [
       headers.join(','),
       ...waitlist.map(entry => [
         entry.email,
-        new Date(entry.created_at).toLocaleDateString(),
-        new Date(entry.created_at).toLocaleTimeString()
+        new Date(entry.created_at).toLocaleDateString()
       ].join(','))
     ].join('\n');
 
@@ -138,8 +151,33 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
     const a = document.createElement('a');
     a.href = url;
     a.download = `usely-waitlist-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleDelete = async (id: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete ${email} from the waitlist?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('waitlist')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        alert('Error deleting entry. Please try again.');
+        return;
+      }
+
+      // Refresh the data
+      fetchAnalyticsData();
+    } catch (error) {
+      alert('Error deleting entry. Please try again.');
+    }
   };
 
   if (isLoading || !analytics) {
@@ -263,6 +301,9 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Time
                     </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
@@ -276,6 +317,14 @@ export default function AnalyticsDashboard({ user }: AdminDashboardProps) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                         {new Date(entry.created_at).toLocaleTimeString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => handleDelete(entry.id, entry.email)}
+                          className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-all duration-300 text-xs font-medium hover:scale-105"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

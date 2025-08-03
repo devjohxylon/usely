@@ -54,7 +54,8 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'your-google-verification-code',
+    // Add your actual Google Search Console verification code here
+    // google: 'your-actual-verification-code',
   },
 }
 
@@ -82,15 +83,29 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
               "name": "Usely",
-              "description": "AI usage metering and billing platform for LLM providers",
+              "description": "AI usage metering and billing platform for LLM providers like OpenAI, Anthropic, and Mistral. Track tokens, analyze usage, and implement usage-based billing.",
               "url": "https://usely.dev",
               "applicationCategory": "DeveloperApplication",
               "operatingSystem": "Web",
               "offers": {
                 "@type": "Offer",
                 "price": "0",
-                "priceCurrency": "USD"
-              }
+                "priceCurrency": "USD",
+                "availability": "https://schema.org/InStock"
+              },
+              "provider": {
+                "@type": "Organization",
+                "name": "Usely",
+                "url": "https://usely.dev"
+              },
+              "featureList": [
+                "AI usage metering",
+                "Token tracking",
+                "Usage-based billing",
+                "LLM provider integration",
+                "Real-time analytics",
+                "Cost control"
+              ]
             })
           }}
         />

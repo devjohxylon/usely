@@ -9,39 +9,63 @@ export default function WaitlistPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+  const [isCountLoading, setIsCountLoading] = useState(true);
   const [lastSubmission, setLastSubmission] = useState<number>(0);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   React.useEffect(() => {
     const fetchWaitlistCount = async () => {
       try {
-        const { count, error } = await supabase
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 3000)
+        );
+        
+        const countPromise = supabase
           .from('waitlist')
           .select('*', { count: 'exact', head: true });
+
+        const { count, error } = await Promise.race([countPromise, timeoutPromise]) as any;
 
         if (!error && count !== null) {
           setWaitlistCount(count);
         }
       } catch (err) {
-        // Silent fail for better UX
+        // Set a fallback count if the query fails or times out
+        setWaitlistCount(0);
+      } finally {
+        setIsCountLoading(false);
       }
     };
 
     fetchWaitlistCount();
+
+    // Check if this IP has already submitted
+    const hasSubmittedBefore = localStorage.getItem('usely_ip_submitted');
+    if (hasSubmittedBefore) {
+      setHasSubmitted(true);
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const emailToSubmit = email.trim().toLowerCase();
+    
+    if (!emailToSubmit) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (hasSubmitted) {
+      setError('You can only submit one email, I know you\'re excited!');
+      return;
+    }
     
     const now = Date.now();
     const timeSinceLastSubmission = now - lastSubmission;
     
     if (timeSinceLastSubmission < 5000) {
       setError('Please wait 5 seconds between submissions.');
-      return;
-    }
-    
-    if (!email.trim()) {
-      setError('Please enter a valid email address.');
       return;
     }
     
@@ -55,7 +79,7 @@ export default function WaitlistPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ email: emailToSubmit }),
       });
 
       const data = await response.json();
@@ -66,6 +90,10 @@ export default function WaitlistPage() {
         return;
       }
 
+      // Mark this IP as having submitted
+      setHasSubmitted(true);
+      localStorage.setItem('usely_ip_submitted', 'true');
+      
       setWaitlistCount(prev => prev !== null ? prev + 1 : 1);
       setIsSubmitted(true);
     } catch (err) {
@@ -190,12 +218,20 @@ export default function WaitlistPage() {
                     <p className="text-red-400 text-sm">{error}</p>
                   </div>
                 )}
-                {waitlistCount !== null && (
-                  <div className="mt-6 text-center">
+                {isCountLoading ? (
+                  <div className="mt-6 text-center animate-fade-in-up-delay-2">
                     <p className="text-gray-400 text-sm">
-                      {waitlistCount} amazing people waiting
+                      Loading waitlist count...
                     </p>
                   </div>
+                ) : (
+                  waitlistCount !== null && (
+                    <div className="mt-6 text-center animate-fade-in-up-delay-2">
+                      <p className="text-gray-400 text-sm">
+                        {waitlistCount} amazing people waiting
+                      </p>
+                    </div>
+                  )
                 )}
               </div>
             ) : (
