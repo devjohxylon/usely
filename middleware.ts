@@ -35,6 +35,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // WAITLIST MODE: Protect product pages and redirect to waitlist
+  const protectedProductPages = ['/features', '/pricing', '/docs', '/faq'];
+  const isProductPage = protectedProductPages.some(page => 
+    request.nextUrl.pathname.startsWith(page)
+  );
+  
+  if (isProductPage && !user) {
+    const redirectUrl = new URL('/waitlist', request.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+
   // If there's no user and the user is trying to access a protected route,
   // redirect them to the login page
   if (!user && request.nextUrl.pathname.startsWith('/admin')) {

@@ -1,45 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import Navbar from '../components/Navbar';
-import HeroSection from '../components/HeroSection';
-import FeaturesSection from '../components/FeaturesSection';
-import CTASection from '../components/CTASection';
-import Footer from '../components/Footer';
-import AuthModal from '../components/AuthModal';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const router = useRouter();
 
-  const openLoginModal = () => {
-    setAuthMode('login');
-    setAuthModalOpen(true);
-  };
-
-  const closeAuthModal = () => {
-    setAuthModalOpen(false);
-  };
+  useEffect(() => {
+    // Redirect to waitlist since we're still in waitlist mode
+    router.push('/waitlist');
+  }, [router]);
 
   return (
-    <main className="min-h-[95vh]">
-      <Navbar 
-        authModalOpen={authModalOpen}
-        setAuthModalOpen={setAuthModalOpen}
-        authMode={authMode}
-        setAuthMode={setAuthMode}
-      />
-      <HeroSection onLoginClick={openLoginModal} />
-      <FeaturesSection />
-      <CTASection onLoginClick={openLoginModal} />
-      <Footer />
-      
-      {/* Shared Auth Modal */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={closeAuthModal}
-        initialMode={authMode}
-      />
+    <main className="min-h-screen bg-black flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-white">Redirecting to waitlist...</p>
+      </div>
     </main>
   );
 } 

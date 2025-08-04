@@ -11,7 +11,7 @@ interface ProfileMenuProps {
   user: {
     id: string;
     email: string;
-    name: string;
+    name?: string;
     avatar?: string;
   };
 }
@@ -61,7 +61,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
            {user.avatar ? (
              <img 
                src={user.avatar} 
-               alt={user.name}
+               alt={user.name || 'User'}
                className="w-6 h-6 rounded-full object-cover"
              />
            ) : (
@@ -71,7 +71,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
          
          {/* User Info */}
          <div className="hidden md:flex flex-col items-start">
-           <span className="text-sm font-semibold text-white leading-tight">{user.name}</span>
+           <span className="text-sm font-semibold text-white leading-tight">{user.name || 'User'}</span>
            <span className="text-xs text-white/60 leading-tight">{user.email}</span>
          </div>
          
@@ -102,7 +102,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                    {user.avatar ? (
                      <img 
                        src={user.avatar} 
-                       alt={user.name}
+                       alt={user.name || 'User'}
                        className="w-8 h-8 rounded-full object-cover"
                      />
                    ) : (
@@ -110,7 +110,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                    )}
                  </div>
                  <div className="flex-1 min-w-0">
-                   <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+                   <p className="text-sm font-semibold text-white truncate">{user.name || 'User'}</p>
                    <p className="text-xs text-white/60 truncate">{user.email}</p>
                  </div>
                </div>
