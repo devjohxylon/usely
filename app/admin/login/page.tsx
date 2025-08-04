@@ -9,6 +9,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
   const router = useRouter();
   const supabase = createClient();
 
@@ -32,6 +33,33 @@ export default function AdminLogin() {
       router.push('/admin/dashboard');
     } catch (err) {
       setError('Something went wrong. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('Please enter your email address first.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setResetMessage('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin/login`,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setResetMessage('Password reset email sent! Check your inbox.');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -79,6 +107,10 @@ export default function AdminLogin() {
             <div className="text-red-400 text-sm text-center">{error}</div>
           )}
 
+          {resetMessage && (
+            <div className="text-green-400 text-sm text-center">{resetMessage}</div>
+          )}
+
           <button
             type="submit"
             disabled={isLoading}
@@ -86,6 +118,17 @@ export default function AdminLogin() {
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={isLoading}
+              className="text-sm text-gray-400 hover:text-white transition-colors duration-200"
+            >
+              Forgot Password?
+            </button>
+          </div>
         </form>
       </div>
     </div>

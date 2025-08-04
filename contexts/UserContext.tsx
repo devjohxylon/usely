@@ -120,14 +120,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = React.useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('Redirect URL being sent:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: redirectUrl
         }
       });
 
       if (error) {
+        console.error('Supabase OAuth error:', error);
         return { success: false, error: error.message };
       }
 
